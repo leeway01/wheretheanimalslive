@@ -176,7 +176,7 @@ const containerStyle = {
   width: '100%',
   height: '725px',
   overflowX: 'hidden', // 가로 스크롤 제거
-  backgroundColor: '#fff',
+  backgroundColor: 'lightgreen',
   boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
 };
 const adSpaceStyle = {

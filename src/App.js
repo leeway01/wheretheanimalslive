@@ -1,9 +1,10 @@
 import React from 'react';
 import WorldMap from './components/WorldMap';
+import './index.css'; // CSS 파일 불러오기
 
 function App() {
   return (
-    <div>
+    <div style={appContainerStyle}>
       <img
         src="/assets/Where_the_Animals_Live-logo.png"
         alt="Where the Animals Live"
@@ -14,9 +15,16 @@ function App() {
   );
 }
 
+const appContainerStyle = {
+  minHeight: '100vh', // 화면 전체 적용
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+};
+
 const logoStyle = {
-  width: '450px', // 로고 크기 조정
-  height: 'auto', // 비율 유지
+  width: '450px',
+  height: 'auto',
 };
 
 export default App;
