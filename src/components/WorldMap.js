@@ -16,26 +16,22 @@ const WorldMap = () => {
   const [animalData, setAnimalData] = useState([]);
   const [modalData, setModalData] = useState(null);
   const [locale, setLocale] = useState('ko'); // 기본 언어 설정
-  const [localizedData, setLocalizedData] = useState({});
+  const [locales, setLocales] = useState(null); // 통합 로케일 데이터
 
+  // GeoJSON 로드
   useEffect(() => {
     fetch(geoJsonUrl)
       .then((response) => response.json())
       .then((data) => setCountries(data));
   }, []);
 
+  // 통합 로케일 파일 한 번 로드
   useEffect(() => {
-    const fetchLocaleData = async () => {
-      try {
-        const response = await fetch(`/locales/${locale}.json`);
-        const data = await response.json();
-        setLocalizedData(data);
-      } catch (error) {
-        console.error('Error fetching locale data:', error);
-      }
-    };
-    fetchLocaleData();
-  }, [locale]);
+    fetch('/locales/locales.json')
+      .then((res) => res.json())
+      .then((data) => setLocales(data))
+      .catch((err) => console.error('Error loading locales:', err));
+  }, []);
 
   const fetchAnimals = async (countryName) => {
     try {
@@ -65,17 +61,36 @@ const WorldMap = () => {
     setModalData(null);
   };
 
+  // UI 텍스트 가져오기
   const getUIText = (key, replacements = {}) => {
-    let text = localizedData.ui?.[key] || key;
+    let text = locales?.[locale]?.ui?.[key] ?? key;
     Object.entries(replacements).forEach(([placeholder, value]) => {
       text = text.replace(`{${placeholder}}`, value);
     });
     return text;
   };
 
-  const getAnimalName = (id) => localizedData[id]?.name || id;
-  const getAnimalDescription = (id) =>
-    localizedData[id]?.description || getUIText('no_data');
+  // 국가명 가져오기
+  const getCountryName = (countryName) =>
+    locales?.[locale]?.countries?.[countryName] ?? countryName;
+
+  // 동물명, 설명(기존 그대로 유지)
+  const getAnimalName = (animal) => {
+    if (animal.name && typeof animal.name === 'object') {
+      return animal.name[locale] || animal.name.en;
+    }
+    return animal.name || animal.id;
+  };
+
+  const getAnimalDescription = (animal) => {
+    if (animal.description) {
+      if (typeof animal.description === 'object') {
+        return animal.description[locale] || animal.description.en;
+      }
+      return animal.description;
+    }
+    return getUIText('no_data');
+  };
 
   return (
     <div style={containerStyle}>
@@ -116,9 +131,12 @@ const WorldMap = () => {
       <div style={animalListStyle}>
         <h2 style={{ textAlign: 'center' }}>
           {selectedCountry
-            ? getUIText('animals_in_country', { country: selectedCountry })
+            ? getUIText('animals_in_country', {
+                country: getCountryName(selectedCountry),
+              })
             : getUIText('select_country')}
         </h2>
+
         {animalData.length > 0 ? (
           <div style={gridStyle}>
             {animalData.map((animal, index) => (
@@ -130,12 +148,12 @@ const WorldMap = () => {
                 <div style={imageContainerStyle}>
                   <img
                     src={animal.image}
-                    alt={getAnimalName(animal.id)}
+                    alt={getAnimalName(animal)}
                     style={imageStyle}
                   />
                 </div>
                 <p style={textStyle}>
-                  <strong>{getAnimalName(animal.id)}</strong>
+                  <strong>{getAnimalName(animal)}</strong>
                 </p>
               </div>
             ))}
@@ -157,11 +175,11 @@ const WorldMap = () => {
               alt={getAnimalName(modalData.id)}
               style={modalImageStyle}
             />
-            <h2>{getAnimalName(modalData.id)}</h2>
+            <h2>{getAnimalName(modalData)}</h2>
             <p style={copyrightTextStyle}>
               {modalData.copyright || '© Unknown'}
             </p>
-            <p>{getAnimalDescription(modalData.id)}</p>
+            <p>{getAnimalDescription(modalData)}</p>
           </div>
         </div>
       )}
@@ -175,7 +193,7 @@ const containerStyle = {
   flexDirection: 'row',
   width: '100%',
   height: '725px',
-  overflowX: 'hidden', // 가로 스크롤 제거
+  overflowX: 'hidden',
   backgroundColor: 'lightgreen',
   boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
 };

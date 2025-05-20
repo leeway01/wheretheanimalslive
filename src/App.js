@@ -23,7 +23,7 @@ const appContainerStyle = {
 };
 
 const logoStyle = {
-  width: '450px',
+  width: '350px',
   height: 'auto',
 };
 
